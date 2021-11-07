@@ -56,12 +56,15 @@ def get_posts():
 
 @app.post("/posts", status_code=status.HTTP_201_CREATED)
 def create_post(post: Post):
-    post_dict = post.dict()
-    post_dict['id'] = randrange(0, 1000000)
-    my_posts.append(post_dict)
+    # To prevent SQL Injection use VALUES (%s, %s, %s ...)
+    cursor.execute("""INSERT INTO posts (title, content, published) VALUES (%s, %s, %s) RETURNING *""", 
+                    (post.title, post.content, post.published))
+    new_post = cursor.fetchone()
+    conn.commit()
+
     return {
         "message": "Succesfully created posts",
-        "post": post_dict
+        "post": new_post
     }
 
 
