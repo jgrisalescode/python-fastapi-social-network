@@ -28,6 +28,7 @@ class UserCreate(BaseModel):
 class UserOut(BaseModel):
     id: int
     email: EmailStr
+    created_at: datetime
 
     # Pydantic works with dict, but we passed sqlalchemy model, we need this
     class Config:
