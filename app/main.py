@@ -1,12 +1,11 @@
 from fastapi import FastAPI, status, HTTPException, Depends
 from fastapi.params import Body
-from pydantic import BaseModel
 from random import randrange
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import time
 from sqlalchemy.orm import Session
-from . import models
+from . import models, schemas
 from .database import engine, get_db
 
 
@@ -14,11 +13,6 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-
-class Post(BaseModel):
-    title: str
-    content: str
-    published: bool = True
 
 while True:
     try:
@@ -33,31 +27,9 @@ while True:
         print("Error: ", error)
         time.sleep(2)
 
-my_posts = [
-    {"title": "Awesome post", "content": "An awesome content too", "id": 1},
-    {"title": "Favorite foods", "content": "I like pizza", "id": 2}
-]
-
-def find_post(id):
-    for post in my_posts:
-        if post['id'] == id:
-            return post
-
-def find_index_post(id):
-    for index, post in enumerate(my_posts):
-        if post['id'] == id:
-            return index
-
-
 @app.get("/")
 def root():
     return {"message": "Hello World"}
-
-
-@app.get("/sqlalchemy")
-def test_posts(db: Session = Depends(get_db)):
-    posts = db.query(models.Post).all()
-    return {"data": posts}
 
 
 @app.get("/posts")
@@ -67,7 +39,7 @@ def get_posts(db: Session = Depends(get_db)):
 
 
 @app.post("/posts", status_code=status.HTTP_201_CREATED)
-def create_post(post: Post, db: Session = Depends(get_db)):
+def create_post(post: schemas.PostCreate, db: Session = Depends(get_db)):
     
     # **post.dict() unpack a dict like params > {'title': 'Hallo'} to (title='Hallo')
     new_post = models.Post(**post.dict())
@@ -107,7 +79,7 @@ def delete_post(id: int, db: Session = Depends(get_db)):
 
 
 @app.put("/posts/{id}")
-def update_post(id: int, post: Post, db: Session = Depends(get_db)):
+def update_post(id: int, post: schemas.PostCreate, db: Session = Depends(get_db)):
 
     post_query = db.query(models.Post).filter(models.Post.id == id)
 
